@@ -1,0 +1,5 @@
+services:
+  jerbsearcher:
+    build: .
+    volumes:
+      - ./db:/usr/src/app/db
