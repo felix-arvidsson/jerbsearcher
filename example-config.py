@@ -10,6 +10,6 @@ recipients = ["email_recipient1@gmail.com", "email_recipient2@umea.se"]
 #
 ##if you're unsure, run url_disector.py script.
 #>python url_disector.py 'https://arbetsformedlingen.se/platsbanken/annonser?p=4:apaJ_2ja_LuF&l=3:AvNB_uwa_6n6'
-occupation_field = "apaJ_2ja_LuF" # all it jobs
-kommun = "AvNB_uwa_6n6" #stockholms kommun
+occupation_fields = ["apaJ_2ja_LuF"] # all it jobs
+kommuner = ["AvNB_uwa_6n6"] #stockholms kommun
 
