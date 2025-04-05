@@ -1,13 +1,15 @@
-from datetime import datetime
 import json
-import requests
+from datetime import datetime
 
-from models import Session, Job
+import requests
 from sqlalchemy import select, update
+
+from models import Job, Session
+
 
 class JobTracker:
     def __init__(self, occupation_fields, kommuner):
-        self.url = 'https://platsbanken-api.arbetsformedlingen.se/jobs/v1/search'
+        self.url = "https://platsbanken-api.arbetsformedlingen.se/jobs/v1/search"
         self.new_jerbs_count = 0
         self.html_ad_links = ""
         self.occupation_fields = occupation_fields
@@ -21,39 +23,41 @@ class JobTracker:
     def search_jerb(self):
         for kommun in self.kommuner:
             for occupation_field in self.occupation_fields:
-                #create datetime string with this format "2024-02-06T12:46:05.060Z".
-                current_time = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+                # create datetime string with this format "2024-02-06T12:46:05.060Z".
+                current_time = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
                 headers = {
-                    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0',
-                    'Accept': 'application/json, text/plain, */*',
-                    'Accept-Language': 'en-US,en;q=0.5',
-                    'Accept-Encoding': 'gzip, deflate, br',
-                    'INT_SYS': 'platsbanken_web_beta',
-                    'Content-Type': 'application/json',
-                    'Origin': 'https://arbetsformedlingen.se',
-                    'DNT': '1',
-                    'Sec-GPC': '1',
-                    'Connection': 'keep-alive',
-                    'Referer': 'https://arbetsformedlingen.se/',
-                    'Sec-Fetch-Dest': 'empty',
-                    'Sec-Fetch-Mode': 'cors',
-                    'Sec-Fetch-Site': 'same-site',
-                    'Pragma': 'no-cache',
-                    'Cache-Control': 'no-cache'
+                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0",
+                    "Accept": "application/json, text/plain, */*",
+                    "Accept-Language": "en-US,en;q=0.5",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "INT_SYS": "platsbanken_web_beta",
+                    "Content-Type": "application/json",
+                    "Origin": "https://arbetsformedlingen.se",
+                    "DNT": "1",
+                    "Sec-GPC": "1",
+                    "Connection": "keep-alive",
+                    "Referer": "https://arbetsformedlingen.se/",
+                    "Sec-Fetch-Dest": "empty",
+                    "Sec-Fetch-Mode": "cors",
+                    "Sec-Fetch-Site": "same-site",
+                    "Pragma": "no-cache",
+                    "Cache-Control": "no-cache",
                 }
                 data = {
                     "filters": [
                         {"type": "occupationField", "value": occupation_field},
-                        {"type": "municipality", "value": kommun}
+                        {"type": "municipality", "value": kommun},
                     ],
                     "fromDate": None,
                     "order": "relevance",
-                    "maxRecords":  100,
-                    "startIndex":  0,
+                    "maxRecords": 100,
+                    "startIndex": 0,
                     "toDate": current_time,
-                    "source": "pb"
+                    "source": "pb",
                 }
-                response = requests.post(self.url, headers=headers, data=json.dumps(data))
+                response = requests.post(
+                    self.url, headers=headers, data=json.dumps(data)
+                )
                 self.ads += response.json()["ads"]
         return self.ads
 
@@ -61,7 +65,12 @@ class JobTracker:
         session = Session()
         for job in self.ads:
             try:
-                new_job = Job(id=job["id"], title=job["title"], publishedDate=job['publishedDate'], email_sent=False)
+                new_job = Job(
+                    id=job["id"],
+                    title=job["title"],
+                    publishedDate=job["publishedDate"],
+                    email_sent=False,
+                )
                 session.add(new_job)
                 session.commit()
             except Exception as e:
@@ -71,7 +80,7 @@ class JobTracker:
     def get_unhandled_jerbs_from_db(self):
         session = Session()
         query = select(Job).where(Job.email_sent == False)
-        
+
         ad_links = ""
         for row in session.execute(query):
             ad_links += f"<a href='https://arbetsformedlingen.se/platsbanken/annonser/{row[0].id}'>{row[0].title}</a><br />"
@@ -85,6 +94,12 @@ class JobTracker:
             </html>
         """
         session.close()
+
+    def get_all_jerbs_from_db(self):
+        session = Session()
+        result = session.execute(select(Job)).scalars().all()
+        session.close()
+        return result
 
     def set_done_to_true_in_db(self):
         session = Session()
